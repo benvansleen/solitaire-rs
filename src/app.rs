@@ -133,10 +133,11 @@ impl Card {
         // let click = move |_| set_border(!border());
 
         view! {
-            <img class="card"
-            class:selected=border
-            // on:click=click
-            src=self.filename()
+            <img
+                class="card"
+                class:selected=border
+                // on:click=click
+                src=self.filename()
             />
         }
         .into_view()
@@ -168,11 +169,7 @@ pub struct Solitaire {
     selected: RwSignal<Option<Selection>>,
 }
 
-fn move_card(
-    from: RwSignal<Vec<Card>>,
-    n_from: usize,
-    to: RwSignal<Vec<Card>>
-) {
+fn move_card(from: RwSignal<Vec<Card>>, n_from: usize, to: RwSignal<Vec<Card>>) {
     let card: Vec<_> = from
         .try_update(|from| from.drain(from.len() - n_from..).collect())
         .expect("for signal to still be valid");
@@ -307,18 +304,16 @@ fn unique_id(id: &str) -> String {
 
 use leptos::ev::MouseEvent;
 #[component]
-fn PileCard(
-    pile_idx: usize,
-    card_idx: usize,
-    card: Card,
-) -> impl IntoView {
+fn PileCard(pile_idx: usize, card_idx: usize, card: Card) -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
     let click = move |e: MouseEvent| {
         e.stop_propagation();
         game.play(Selection::Pile(pile_idx, card_idx))
     };
     view! {
-        <span class="card" on:click=click> {card.view()} </span>
+        <span class="card" on:click=click>
+            {card.view()}
+        </span>
     }
 }
 
@@ -340,17 +335,13 @@ fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
     };
 
     let cards = move |(card_idx, card)| {
-        view! {
-            <PileCard pile_idx=idx card_idx card=card />
-        }
+        view! { <PileCard pile_idx=idx card_idx card=card/> }
     };
 
     view! {
         <div class="pile" on:click=click>
             <CardOutline/>
-        <For each=pile
-        key=move |(i, card)| format!("{}-{}", i, card.id())
-        children=cards/>
+            <For each=pile key=move |(i, card)| format!("{}-{}", i, card.id()) children=cards/>
         </div>
     }
 }
@@ -529,7 +520,6 @@ fn Solitaire() -> impl IntoView {
     view! {
         <Suspense fallback=move || {
             view! { <div>"Loading..."</div> }
-        }>{move || game.get().map(|game| view! { <Game game/> })}
-        </Suspense>
+        }>{move || game.get().map(|game| view! { <Game game/> })}</Suspense>
     }
 }
