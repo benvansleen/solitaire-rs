@@ -7,8 +7,6 @@ use rand::prelude::SliceRandom;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-static ASSETS: &str = "public";
-
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
@@ -135,8 +133,11 @@ impl Card {
         // let click = move |_| set_border(!border());
 
         view! {
+            <img class="card"
+            class:selected=border
             // on:click=click
-            <img class="card" class:selected=border src=self.filename()/>
+            src=self.filename()
+            />
         }
         .into_view()
     }
@@ -177,17 +178,6 @@ fn move_card(
         .expect("for signal to still be valid");
 
     to.update(|to| to.extend(card));
-
-    // match card {
-    //     Some(card) => {
-    //         to.update(|to| {
-    //             to.push(card);
-    //         });
-    //     }
-    //     None => {
-    //         log!("No card to move");
-    //     }
-    // }
 }
 
 impl Solitaire {
@@ -213,6 +203,10 @@ impl Solitaire {
             foundations: std::array::from_fn(|_| create_rw_signal(Vec::new())),
             selected: create_rw_signal(None),
         }
+    }
+
+    fn clear_selection(&self) {
+        self.selected.set(None);
     }
 
     fn is_valid_move_to_pile(&self, from: &[Card], to: &[Card]) -> bool {
@@ -242,10 +236,8 @@ impl Solitaire {
     }
 
     fn play(&mut self, s: Selection) {
-        log!("Current selection: {:?}", self.selected);
-        log!("Playing {:?}", s);
-
         use Selection::*;
+        log!("Playing {:?}", s);
         match (self.selected.get(), s) {
             (None, _) => {
                 self.selected.set(Some(s));
@@ -326,7 +318,7 @@ fn PileCard(
         game.play(Selection::Pile(pile_idx, card_idx))
     };
     view! {
-        <span on:click=click> {card.view()} </span>
+        <span class="card" on:click=click> {card.view()} </span>
     }
 }
 
@@ -344,12 +336,10 @@ fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
             }
         });
         let cards = cards();
-        log!("Pile {}: {:?}", idx, cards);
         (1..=cards.len()).rev().zip(cards.into_iter())
     };
 
     let cards = move |(card_idx, card)| {
-        log!("Card {}: {:?}", card_idx, card);
         view! {
             <PileCard pile_idx=idx card_idx card=card />
         }
@@ -358,7 +348,6 @@ fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
     view! {
         <div class="pile" on:click=click>
             <CardOutline/>
-            // <For each=pile key=|card| card.id() children=|card| card.view()/>
         <For each=pile
         key=move |(i, card)| format!("{}-{}", i, card.id())
         children=cards/>
@@ -384,7 +373,10 @@ fn Piles() -> impl IntoView {
 fn Foundation(idx: usize) -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
     let foundation = move || game.foundations[idx].get().last().map(|card| card.view());
-    let click = move |_| game.play(Selection::Foundation(idx));
+    let click = move |e: MouseEvent| {
+        e.stop_propagation();
+        game.play(Selection::Foundation(idx));
+    };
 
     view! {
         <div class="foundation" on:click=click>
@@ -457,7 +449,10 @@ fn Deck() -> impl IntoView {
 fn Waste() -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
     let waste = game.waste;
-    let click = move |_| game.play(Selection::Waste);
+    let click = move |e: MouseEvent| {
+        e.stop_propagation();
+        game.play(Selection::Waste);
+    };
     let waste = move || waste().last().map(|card| card.view()).collect_view();
 
     view! {
@@ -490,11 +485,16 @@ fn TopRow() -> impl IntoView {
 
 #[component]
 fn Game(game: Solitaire) -> impl IntoView {
+    let clear_selection = move |e: MouseEvent| {
+        e.stop_propagation();
+        log!("Clearing selection");
+        game.selected.set(None);
+    };
     provide_context(game);
 
     view! {
         <h1>"Solitaire"</h1>
-        <div class="game">
+        <div class="game" on:click=clear_selection>
             <TopRow/>
             <Piles/>
         </div>
@@ -503,7 +503,7 @@ fn Game(game: Solitaire) -> impl IntoView {
 
 #[server]
 pub async fn fetch_cards() -> Result<Solitaire, ServerFnError> {
-    let cards = std::fs::read_dir(Path::new(ASSETS).join("cards"))
+    let cards = std::fs::read_dir(Path::new("public").join("cards"))
         .expect("public/cards does not exist")
         .map(|path| {
             path.expect("failed to read card path")
