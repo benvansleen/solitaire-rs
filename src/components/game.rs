@@ -1,11 +1,10 @@
+use crate::{
+    components::{DeckArea, Foundations, Pile},
+    game::Solitaire,
+};
+use leptos::ev::MouseEvent;
 use leptos::*;
 use leptos_dom::log;
-use leptos::ev::MouseEvent;
-use crate::{
-    game::Solitaire,
-    components::{DeckArea, Foundations, Pile},
-};
-
 
 #[component]
 pub fn Game(game: Solitaire) -> impl IntoView {
@@ -13,7 +12,6 @@ pub fn Game(game: Solitaire) -> impl IntoView {
         e.stop_propagation();
         log!("Clearing selection");
         game.selected.set(None);
-
     };
     provide_context(game);
 

@@ -1,12 +1,6 @@
-use leptos::*;
+use crate::game::{Card, CardOutline, Selection, Solitaire};
 use leptos::ev::MouseEvent;
-use crate::game::{
-    Card,
-    CardOutline,
-    Selection,
-    Solitaire,
-};
-
+use leptos::*;
 
 #[component]
 pub fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
@@ -38,7 +32,11 @@ pub fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
 }
 
 #[component]
-fn PileCard(pile_idx: usize, card_idx: usize, card: Card) -> impl IntoView {
+fn PileCard(
+    pile_idx: usize,
+    card_idx: usize,
+    card: Card,
+) -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
     let click = move |e: MouseEvent| {
         e.stop_propagation();

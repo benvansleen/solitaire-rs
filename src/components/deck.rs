@@ -1,11 +1,6 @@
-use leptos::*;
+use crate::game::{CardOutline, FaceDownCard, Selection, Solitaire};
 use leptos::ev::MouseEvent;
-use crate::game::{
-    CardOutline,
-    FaceDownCard,
-    Selection,
-    Solitaire,
-};
+use leptos::*;
 
 #[component]
 pub fn DeckArea() -> impl IntoView {
@@ -25,7 +20,8 @@ fn Waste() -> impl IntoView {
         e.stop_propagation();
         game.play(Selection::Waste);
     };
-    let waste = move || waste().last().map(|card| card.view()).collect_view();
+    let waste =
+        move || waste().last().map(|card| card.view()).collect_view();
 
     view! {
         <div class="deck" on:click=click>
@@ -97,7 +93,8 @@ pub fn Foundations() -> impl IntoView {
 #[component]
 fn Foundation(idx: usize) -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
-    let foundation = move || game.foundations[idx].get().last().map(|card| card.view());
+    let foundation =
+        move || game.foundations[idx].get().last().map(|card| card.view());
     let click = move |e: MouseEvent| {
         e.stop_propagation();
         game.play(Selection::Foundation(idx));

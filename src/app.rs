@@ -1,11 +1,12 @@
-use crate::error_template::{AppError, ErrorTemplate};
+use crate::{
+    components::game::Game,
+    error_template::{AppError, ErrorTemplate},
+    game::{Card, Solitaire},
+};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 use std::path::Path;
-use crate::components::game::Game;
-use crate::game::{Solitaire, Card};
-
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -59,7 +60,8 @@ pub async fn fetch_cards() -> Result<Solitaire, ServerFnError> {
 
 #[component]
 fn Solitaire() -> impl IntoView {
-    let game = create_resource(|| (), |_| async { fetch_cards().await.unwrap() });
+    let game =
+        create_resource(|| (), |_| async { fetch_cards().await.unwrap() });
 
     view! {
         <Suspense fallback=move || {
