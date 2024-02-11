@@ -167,4 +167,32 @@ impl Solitaire {
 
         self.selected.set(None);
     }
+
+    pub fn draw(&mut self) {
+        let deck = self.deck;
+        let waste = self.waste;
+
+        match self.deck.get().last() {
+            Some(card) => {
+                deck.update(|d| {
+                    d.pop();
+                });
+                waste.update(|w| {
+                    let mut card = card.to_owned();
+                    card.flip();
+                    w.push(card);
+                });
+            }
+            None => {
+                let mut cur_waste = waste();
+                cur_waste.reverse();
+                deck.update(|d| {
+                    d.extend(cur_waste);
+                });
+                waste.update(|w| {
+                    w.clear();
+                });
+            }
+        }
+    }
 }

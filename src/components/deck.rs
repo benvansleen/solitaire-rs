@@ -1,5 +1,8 @@
-use crate::game::{CardOutline, FaceDownCard, Selection, Solitaire};
-use leptos::ev::MouseEvent;
+use crate::{
+    components::game::Game,
+    game::{CardOutline, FaceDownCard, Selection, Solitaire},
+};
+use leptos::ev::{DragEvent, MouseEvent};
 use leptos::*;
 
 #[component]
@@ -14,17 +17,33 @@ pub fn DeckArea() -> impl IntoView {
 
 #[component]
 fn Waste() -> impl IntoView {
-    let mut game = expect_context::<Solitaire>();
-    let waste = game.waste;
-    let click = move |e: MouseEvent| {
-        e.stop_propagation();
-        game.play(Selection::Waste);
-    };
+    let mut game = expect_context::<Game>();
+    let waste = game.borrow().waste;
     let waste =
         move || waste().last().map(|card| card.view()).collect_view();
 
+    let click = {
+        let game = game.clone();
+        move |e: MouseEvent| {
+            e.stop_propagation();
+            game.borrow_mut().play(Selection::Waste);
+        }
+    };
+
+    let drag = {
+        let game = game.clone();
+        move |e: DragEvent| {
+            game.borrow_mut().play(Selection::Waste);
+        }
+    };
     view! {
-        <div class="deck" on:click=click>
+        <div
+            class="deck"
+            on:click=click
+            on:dragstart=drag.clone()
+            on:drop=drag
+            on:dragover=move |e| e.prevent_default()
+        >
             <CardOutline/>
             {waste}
         </div>
@@ -33,31 +52,11 @@ fn Waste() -> impl IntoView {
 
 #[component]
 fn Deck() -> impl IntoView {
-    let game = expect_context::<Solitaire>();
-    let deck = game.deck;
-    let waste = game.waste;
+    let game = expect_context::<Game>();
+    let deck = game.borrow().deck;
 
-    let click = move |_| match deck().last() {
-        Some(card) => {
-            deck.update(|d| {
-                d.pop();
-            });
-            waste.update(|w| {
-                let mut card = card.to_owned();
-                card.flip();
-                w.push(card);
-            });
-        }
-        None => {
-            let mut cur_waste = waste();
-            cur_waste.reverse();
-            deck.update(|d| {
-                d.extend(cur_waste);
-            });
-            waste.update(|w| {
-                w.clear();
-            });
-        }
+    let click = move |_| {
+        game.borrow_mut().draw();
     };
 
     let deck = move || {
@@ -77,10 +76,10 @@ fn Deck() -> impl IntoView {
 
 #[component]
 pub fn Foundations() -> impl IntoView {
-    let game = expect_context::<Solitaire>();
-    let foundations = game.foundations;
+    let game = expect_context::<Game>();
     let foundations = move || {
-        foundations
+        game.borrow()
+            .foundations
             .iter()
             .enumerate()
             .map(|(idx, _)| view! { <Foundation idx/> })
@@ -92,16 +91,35 @@ pub fn Foundations() -> impl IntoView {
 
 #[component]
 fn Foundation(idx: usize) -> impl IntoView {
-    let mut game = expect_context::<Solitaire>();
-    let foundation =
-        move || game.foundations[idx].get().last().map(|card| card.view());
-    let click = move |e: MouseEvent| {
-        e.stop_propagation();
-        game.play(Selection::Foundation(idx));
+    let mut game = expect_context::<Game>();
+    let foundation = {
+        let foundation = game.borrow().foundations[idx];
+        move || foundation().last().map(|card| card.view())
+    };
+
+    let click = {
+        let game = game.clone();
+        move |e: MouseEvent| {
+            e.stop_propagation();
+            game.borrow_mut().play(Selection::Foundation(idx));
+        }
+    };
+    let drag = {
+        let game = game.clone();
+        move |e: DragEvent| {
+            let mut game = game.borrow_mut();
+            game.play(Selection::Foundation(idx));
+        }
     };
 
     view! {
-        <div class="foundation" on:click=click>
+        <div
+            class="foundation"
+            on:click=click
+            on:dragstart=drag.clone()
+            on:drop=drag
+            on:dragover=move |e| e.prevent_default()
+        >
             <CardOutline/>
             {foundation}
         </div>
