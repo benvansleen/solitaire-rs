@@ -26,7 +26,11 @@ pub fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
     view! {
         <div class="pile" on:click=click>
             <CardOutline/>
-            <For each=pile key=move |(i, card)| format!("{}-{}", i, card.id()) children=cards/>
+            <For
+                each=pile
+                key=move |(i, card)| format!("{}-{}", i, card.id())
+                children=cards
+            />
         </div>
     }
 }

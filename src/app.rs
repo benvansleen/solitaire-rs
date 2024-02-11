@@ -66,6 +66,8 @@ fn Solitaire() -> impl IntoView {
     view! {
         <Suspense fallback=move || {
             view! { <div>"Loading..."</div> }
-        }>{move || game.get().map(|game| view! { <Game game/> })}</Suspense>
+        }>
+            {move || game.get().map(|game| view! { <Game game/> })}
+        </Suspense>
     }
 }

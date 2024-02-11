@@ -3,7 +3,14 @@ use serde::{Deserialize, Serialize};
 
 #[component]
 pub fn FaceDownCard() -> impl IntoView {
-    view! { <img class="card" draggable="false" clickable="false" src="cards/face_down.jpg"/> }
+    view! {
+        <img
+            class="card"
+            draggable="false"
+            clickable="false"
+            src="cards/face_down.jpg"
+        />
+    }
 }
 
 #[component]
