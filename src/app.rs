@@ -152,7 +152,7 @@ impl Card {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 enum Selection {
-    Pile(usize),
+    Pile(usize, usize),
     Foundation(usize),
     Deck,
     Waste,
@@ -167,21 +167,27 @@ pub struct Solitaire {
     selected: RwSignal<Option<Selection>>,
 }
 
-fn move_card(from: RwSignal<Vec<Card>>, to: RwSignal<Vec<Card>>) {
-    let card = from
-        .try_update(|from| from.pop())
+fn move_card(
+    from: RwSignal<Vec<Card>>,
+    n_from: usize,
+    to: RwSignal<Vec<Card>>
+) {
+    let card: Vec<_> = from
+        .try_update(|from| from.drain(from.len() - n_from..).collect())
         .expect("for signal to still be valid");
 
-    match card {
-        Some(card) => {
-            to.update(|to| {
-                to.push(card);
-            });
-        }
-        None => {
-            log!("No card to move");
-        }
-    }
+    to.update(|to| to.extend(card));
+
+    // match card {
+    //     Some(card) => {
+    //         to.update(|to| {
+    //             to.push(card);
+    //         });
+    //     }
+    //     None => {
+    //         log!("No card to move");
+    //     }
+    // }
 }
 
 impl Solitaire {
@@ -209,7 +215,7 @@ impl Solitaire {
         }
     }
 
-    fn is_valid_move_to_pile(&self, from: Vec<Card>, to: Vec<Card>) -> bool {
+    fn is_valid_move_to_pile(&self, from: &[Card], to: &[Card]) -> bool {
         if from.is_empty() {
             return false;
         }
@@ -222,7 +228,7 @@ impl Solitaire {
         from_card.value + 1 == to_card.value && from_card.color() != to_card.color()
     }
 
-    fn is_valid_move_to_foundation(&self, from: Vec<Card>, to: Vec<Card>) -> bool {
+    fn is_valid_move_to_foundation(&self, from: &[Card], to: &[Card]) -> bool {
         if from.is_empty() {
             return false;
         }
@@ -245,48 +251,51 @@ impl Solitaire {
                 self.selected.set(Some(s));
                 return;
             }
-            (Some(Pile(source)), Pile(destination)) => {
-                let source = self.piles[source];
-                let destination = self.piles[destination];
-                let valid = self.is_valid_move_to_pile(source(), destination());
+            (Some(Pile(from, from_card)), Pile(to, to_card)) => {
+                let source = self.piles[from];
+                let destination = self.piles[to];
+                let valid = self.is_valid_move_to_pile(
+                    &source()[..=source().len() - from_card],
+                    &destination(),
+                );
                 if valid {
-                    move_card(source, destination);
+                    move_card(source, from_card, destination);
                 }
             }
-            (Some(Pile(source)), Foundation(destination)) => {
-                let source = self.piles[source];
+            (Some(Pile(from, _)), Foundation(destination)) => {
+                let source = self.piles[from];
                 let destination = self.foundations[destination];
-                let valid = self.is_valid_move_to_foundation(source(), destination());
+                let valid = self.is_valid_move_to_foundation(&source(), &destination());
 
                 if valid {
-                    move_card(source, destination);
+                    move_card(source, 1, destination);
                 }
             }
-            (Some(Foundation(source)), Pile(destination)) => {
+            (Some(Foundation(source)), Pile(destination, _)) => {
                 let source = self.foundations[source];
                 let destination = self.piles[destination];
-                let valid = self.is_valid_move_to_pile(source(), destination());
+                let valid = self.is_valid_move_to_pile(&source(), &destination());
 
                 if valid {
-                    move_card(source, destination);
+                    move_card(source, 1, destination);
                 }
             }
-            (Some(Waste), Pile(destination)) => {
+            (Some(Waste), Pile(destination, _)) => {
                 let source = self.waste;
                 let destination = self.piles[destination];
-                let valid = self.is_valid_move_to_pile(source(), destination());
+                let valid = self.is_valid_move_to_pile(&source(), &destination());
 
                 if valid {
-                    move_card(source, destination);
+                    move_card(source, 1, destination);
                 }
             }
             (Some(Waste), Foundation(destination)) => {
                 let source = self.waste;
                 let destination = self.foundations[destination];
-                let valid = self.is_valid_move_to_foundation(source(), destination());
+                let valid = self.is_valid_move_to_foundation(&source(), &destination());
 
                 if valid {
-                    move_card(source, destination);
+                    move_card(source, 1, destination);
                 }
             }
             _ => {
@@ -304,11 +313,28 @@ fn unique_id(id: &str) -> String {
     format!("{}-{}", id, r)
 }
 
+use leptos::ev::MouseEvent;
+#[component]
+fn PileCard(
+    pile_idx: usize,
+    card_idx: usize,
+    card: Card,
+) -> impl IntoView {
+    let mut game = expect_context::<Solitaire>();
+    let click = move |e: MouseEvent| {
+        e.stop_propagation();
+        game.play(Selection::Pile(pile_idx, card_idx))
+    };
+    view! {
+        <span on:click=click> {card.view()} </span>
+    }
+}
+
 #[component]
 fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
     let mut game = expect_context::<Solitaire>();
     let click = move |_| {
-        game.play(Selection::Pile(idx));
+        game.play(Selection::Pile(idx, 0));
     };
 
     let pile = move || {
@@ -317,13 +343,25 @@ fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
                 card.flip();
             }
         });
-        cards()
+        let cards = cards();
+        log!("Pile {}: {:?}", idx, cards);
+        (1..=cards.len()).rev().zip(cards.into_iter())
+    };
+
+    let cards = move |(card_idx, card)| {
+        log!("Card {}: {:?}", card_idx, card);
+        view! {
+            <PileCard pile_idx=idx card_idx card=card />
+        }
     };
 
     view! {
         <div class="pile" on:click=click>
             <CardOutline/>
-            <For each=pile key=|card| card.id() children=|card| card.view()/>
+            // <For each=pile key=|card| card.id() children=|card| card.view()/>
+        <For each=pile
+        key=move |(i, card)| format!("{}-{}", i, card.id())
+        children=cards/>
         </div>
     }
 }
