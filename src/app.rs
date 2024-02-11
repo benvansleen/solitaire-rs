@@ -6,7 +6,6 @@ use leptos_router::*;
 use std::path::Path;
 use rand::prelude::SliceRandom;
 use serde::{Serialize, Deserialize};
-// use thaw::{Button, Slider, Spinner};
 
 static ASSETS: &str = "public";
 
@@ -38,25 +37,6 @@ pub fn App() -> impl IntoView {
 fn Main() -> impl IntoView {
     view! {
         <Solitaire />
-    }
-}
-
-#[component]
-fn Card(#[prop(into)] card: String) -> impl IntoView {
-    let (border, set_border) = create_signal(false);
-    let click = {
-        let card = card.clone();
-        move |_| {
-            log!("Clicked: {:?}", card);
-            set_border(!border());
-        }
-    };
-
-    view! {
-        <img on:click=click
-        class="card"
-        class:selected=border
-        src=card />
     }
 }
 
@@ -94,42 +74,8 @@ struct Card {
     suit: Suit,
     value: u8,
     filename: String,
+    faceup: bool,
 }
-
-// impl IntoView for Card {
-//     fn into_view(self) -> View {
-//         let (border, set_border) = create_signal(false);
-//         let click = move |_| {
-//             set_border(!border());
-//         };
-//         view! {
-//             <img
-//               class="card"
-//               class:selected=border
-//               on:click=click
-//               src={self.filename()}
-//             />
-//         }.into_view()
-//     }
-// }
-
-// impl Into<String> for Card {
-//     fn into(self) -> String {
-//         self.filename()
-//     }
-// }
-
-impl From<&Card> for String {
-    fn from(card: &Card) -> String {
-        card.filename()
-    }
-}
-
-// impl From<Card> for String {
-//     fn from(card: Card) -> String {
-//         card.filename()
-//     }
-// }
 
 impl Card {
     fn new(filename: String) -> Self {
@@ -166,28 +112,57 @@ impl Card {
             _ => panic!("Invalid value"),
         };
 
-        Self { suit, value, filename }
+        Self { suit, value, filename, faceup: false }
+    }
+
+    fn color(&self) -> &'static str {
+        match self.suit {
+            Suit::Spades | Suit::Clubs => "black",
+            Suit::Hearts | Suit::Diamonds => "red",
+        }
     }
 
     fn filename(&self) -> String {
-        format!("cards/{}", self.filename.to_owned())
+        format!("cards/{}", self.filename)
     }
 
-    // fn view(&self) -> View {
-    //     let (border, set_border) = create_signal(false);
-    //     let click = move |_| {
-    //         set_border(!border());
-    //     };
+    fn flip(&mut self) {
+        self.faceup = true;
+    }
 
-    //     view! {
-    //         <img
-    //           class="card"
-    //           class:selected=border
-    //           on:click=click
-    //           src={self.filename()}
-    //         />
-    //     }.into_view()
-    // }
+    fn id(&self) -> String {
+        format!("{}-{}", self.filename, self.faceup)
+    }
+
+    fn show_faceup(&self) -> View {
+        let (border, set_border) = create_signal(false);
+        // let click = move |_| set_border(!border());
+
+        view! {
+            <img //on:click=click
+            class="card"
+            class:selected=border
+            src=self.filename() />
+        }.into_view()
+    }
+
+    fn view(&self) -> View {
+        if self.faceup {
+            self.show_faceup()
+        } else {
+            view! { <FaceDownCard /> }
+        }
+    }
+}
+
+
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+enum Selection {
+    Pile(usize),
+    Foundation(usize),
+    Deck,
+    Waste,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -196,10 +171,23 @@ pub struct Solitaire {
     waste: RwSignal<Vec<Card>>,
     piles: [RwSignal<Vec<Card>>; 7],
     foundations: [RwSignal<Vec<Card>>; 4],
-    // deck: Vec<RwSignal<Card>>,
-    // waste: Vec<RwSignal<Card>>,
-    // piles: [Vec<RwSignal<Card>>; 7],
-    // foundations: [Vec<RwSignal<Card>>; 4],
+    selected: RwSignal<Option<Selection>>,
+}
+
+fn move_card(from: RwSignal<Vec<Card>>, to: RwSignal<Vec<Card>>) {
+    let card = from.try_update(|from| from.pop()).expect("for signal to still be valid");
+
+    match card {
+        Some(card) => {
+            to.update(|to| {
+                to.push(card);
+            });
+        },
+        None => {
+            log!("No card to move");
+        },
+    }
+
 }
 
 impl Solitaire {
@@ -218,115 +206,106 @@ impl Solitaire {
             drain_into_signal(0..5),
             drain_into_signal(0..6),
             drain_into_signal(0..7),
-            // cards.drain(0..1).collect(),
-            // cards.drain(0..2).collect(),
-            // cards.drain(0..3).collect(),
-            // cards.drain(0..4).collect(),
-            // cards.drain(0..5).collect(),
-            // cards.drain(0..6).collect(),
-            // cards.drain(0..7).collect(),
         ];
 
         Self {
-            // deck: cards.iter().map(|c| create_rw_signal(c.to_owned())).collect(),
-            // waste: Vec::new(),
-            // piles,
-            // foundations: std::array::from_fn(|_| Vec::new()),
             deck: create_rw_signal(cards.to_vec()),
             waste: create_rw_signal(Vec::new()),
             piles,
             foundations: std::array::from_fn(|_| create_rw_signal(Vec::new())),
-            // selected: create_rw_signal(None),
-            // destination: create_rw_signal(None),
-            // deck: cards.to_vec(),
-            // waste: Vec::new(),
-            // piles: piles,
-            // foundations: std::array::from_fn(|_| Vec::new()),
+            selected: create_rw_signal(None),
         }
     }
 
-    // fn play(&mut self, m: Move) {
-    //     match (m.source, m.destination) {
-    //         (Source::Pile(s), Destination::Pile(d)) => {
-    //             let card = self.piles[s].pop().unwrap();
-    //             self.piles[d].push(card);
-    //         }
-    //         (Source::Pile(s), Destination::Foundation(d)) => {
-    //             let card = self.piles[s].pop().unwrap();
-    //             self.foundations[d].push(card);
-    //         }
-    //         (Source::Foundation(s), Destination::Pile(d)) => {
-    //             let card = self.foundations[s].pop().unwrap();
-    //             self.piles[d].push(card);
-    //         }
-    //         (Source::Foundation(s), Destination::Foundation(d)) => {
-    //             let card = self.foundations[s].pop().unwrap();
-    //             self.foundations[d].push(card);
-    //         }
-    //     }
-    // }
+    fn is_valid_move_to_pile(&self, from: Vec<Card>, to: Vec<Card>) -> bool {
+        if from.is_empty() {
+            return false;
+        }
+        if to.is_empty() {
+            return from.last().unwrap().value == 13;
+        }
+        let from_card = from.last().unwrap();
+        let to_card = to.last().unwrap();
 
-    // fn view(&self) -> impl IntoView {
-    //     let piles = self.piles
-    //         .iter()
-    //         .enumerate()
-    //         .map(|(i, pile)| view! {
-    //             <Pile idx=i cards=pile.clone() />
-    //         })
-    //         .collect_view();
+        from_card.value + 1 == to_card.value
+            && from_card.color() != to_card.color()
+    }
 
-    //     let foundations = self.foundations
-    //         .iter()
-    //         .map(|f| {
-    //             let card = f
-    //                 .last()
-    //                 .map(|card| card.to_owned())
-    //                 .map_or_else(
-    //                     || view! { <div /> },
-    //                     |card| view! {
-    //                         <div>
-    //                             <Card card=card />
-    //                         </div>
-    //                     },
-    //                 );
+    fn is_valid_move_to_foundation(&self, from: Vec<Card>, to: Vec<Card>) -> bool {
+        if from.is_empty() {
+            return false;
+        }
+        if to.is_empty() {
+            return from.last().unwrap().value == 1;
+        }
+        let from_card = from.last().unwrap();
+        let to_card = to.last().unwrap();
 
-    //             view! {
-    //                 <div class="foundation">
-    //                 <CardOutline />
-    //                 {card}
-    //                 </div>
-    //             }
-    //         })
-    //         .collect_view();
+        from_card.value - 1 == to_card.value
+            && from_card.suit == to_card.suit
+    }
 
-    //     let deck = self.deck
-    //         .is_empty()
-    //         .then(|| view! { <div /> })
-    //         .unwrap_or_else(|| view! { <div> <FaceDownCard /> </div> });
+    fn play(&mut self, s: Selection) {
+        log!("Current selection: {:?}", self.selected);
+        log!("Playing {:?}", s);
 
-    //     let draw = self.waste
-    //         .last()
-    //         .map(|card| card.to_owned())
-    //         .map(|card| view! { <div> <Card card=card /> </div> })
-    //         .unwrap_or_else(|| view! { <div /> });
+        use Selection::*;
+        match (self.selected.get(), s) {
+            (None, _) => {
+                self.selected.set(Some(s));
+                return;
+            },
+            (Some(Pile(source)), Pile(destination)) => {
+                let source = self.piles[source];
+                let destination = self.piles[destination];
+                let valid = self.is_valid_move_to_pile(source(), destination());
+                if valid {
+                    move_card(source, destination);
+                }
+            },
+            (Some(Pile(source)), Foundation(destination)) => {
+                let source = self.piles[source];
+                let destination = self.foundations[destination];
+                let valid = self.is_valid_move_to_foundation(source(), destination());
 
-    //     view! {
-    //         <div class="top-row">
-    //             <div class="foundations"> {foundations} </div>
-    //             <div class="deck-area">
-    //                 <div class="deck">
-    //                     <CardOutline />
-    //                     {deck}
-    //                 </div>
-    //                 <div class="deck">
-    //                     <CardOutline />
-    //                     {draw}
-    //                 </div>
-    //             </div>
-    //         </div>
-    //         <div class="piles"> {piles} </div>
-    //     }
-    // }
+                if valid {
+                    move_card(source, destination);
+                }
+            },
+            (Some(Foundation(source)), Pile(destination)) => {
+                let source = self.foundations[source];
+                let destination = self.piles[destination];
+                let valid = self.is_valid_move_to_pile(source(), destination());
+
+                if valid {
+                    move_card(source, destination);
+                }
+            },
+            (Some(Waste), Pile(destination)) => {
+                let source = self.waste;
+                let destination = self.piles[destination];
+                let valid = self.is_valid_move_to_pile(source(), destination());
+
+                if valid {
+                    move_card(source, destination);
+                }
+            },
+            (Some(Waste), Foundation(destination)) => {
+                let source = self.waste;
+                let destination = self.foundations[destination];
+                let valid = self.is_valid_move_to_foundation(source(), destination());
+
+                if valid {
+                    move_card(source, destination);
+                }
+            },
+            _ => {
+                log!("Invalid move");
+            },
+        }
+
+        self.selected.set(None);
+    }
 }
 
 fn unique_id(id: &str) -> String {
@@ -336,45 +315,34 @@ fn unique_id(id: &str) -> String {
 }
 
 #[component]
-fn Pile<F>(
+fn Pile(
     idx: usize,
-    #[prop(into)]
-    cards: Signal<Vec<Card>>,
-    on_click: F,
+    cards: RwSignal<Vec<Card>>,
 ) -> impl IntoView
-where
-    F: Fn(usize) + 'static,
 {
+    let mut game = expect_context::<Solitaire>();
+    let click = move |_| {
+        game.play(Selection::Pile(idx));
+    };
+
     let pile = move || {
-        let cards = cards();
-        cards
-        .last()
-        .map(|card| {
-            std::iter::repeat_with(||
-                (unique_id("facedown"), view! { <FaceDownCard /> })
-            )
-                .take(cards.len() - 1)
-                .chain(std::iter::once(
-                    (unique_id(&card.filename()), view! { <Card card /> })
-                ))
-                .collect::<Vec<(_, _)>>()
-        })
-        .unwrap_or_default()
+        cards.update(|cards| {
+            if let Some(card) = cards.last_mut() {
+                card.flip();
+            }
+        });
+        cards()
     };
 
     view! {
         <div class="pile"
-             on:click=move |_| on_click(idx)
+             on:click=click
         >
             <CardOutline />
         <For each=pile
-              key=|(k, _)| k.clone()
-        let:card
-        >
-        {card.1}
-        </For>
-
-
+             key=|card| card.id()
+             children=|card| card.view()
+        />
         </div>
     }
 }
@@ -382,19 +350,10 @@ where
 #[component]
 fn Piles() -> impl IntoView {
     let game = expect_context::<Solitaire>();
-    let click = move |idx: usize| {
-        let source = game.piles[idx];
-        let destination = game.piles[idx + 1];
-        let card = source().last().unwrap().to_owned();
-
-        source.update(|s| { s.pop(); });
-        destination.update(|d| { d.push(card); });
-    };
-    let piles = move || game
-        .piles
+    let piles = move || game.piles
         .iter()
         .enumerate()
-        .map(|(idx, &cards)| view! { <Pile idx cards on_click=click /> })
+        .map(|(idx, &cards)| view! { <Pile idx cards /> })
         .collect_view();
 
     view! {
@@ -405,17 +364,33 @@ fn Piles() -> impl IntoView {
 }
 
 #[component]
+fn Foundation(idx: usize) -> impl IntoView {
+    let mut game = expect_context::<Solitaire>();
+    let foundation = move || game
+        .foundations[idx]
+        .get()
+        .last()
+        .map(|card| card.view());
+    let click = move |_| game.play(Selection::Foundation(idx));
+
+    view! {
+        <div class="foundation" on:click=click>
+            <CardOutline />
+            {foundation}
+        </div>
+    }
+}
+
+#[component]
 fn Foundations() -> impl IntoView {
     let game = expect_context::<Solitaire>();
     let foundations = game.foundations;
     let foundations = move || {
         foundations
-            .map(|f| view! {
-                <div class="foundation">
-                <CardOutline />
-                {f().last().map(|card| view! { <Card card /> })}
-                </div>
-            })
+            .iter()
+            .enumerate()
+            .map(|(idx, _)| view! { <Foundation idx /> })
+            .collect_view()
     };
 
     view! {
@@ -433,7 +408,11 @@ fn Deck() -> impl IntoView {
         match deck().last() {
             Some(card) => {
                 deck.update(|d| { d.pop(); });
-                waste.update(|w| { w.push(card.to_owned()); })
+                waste.update(|w| {
+                    let mut card = card.to_owned();
+                    card.flip();
+                    w.push(card);
+                });
             },
             None => {
                 let mut cur_waste = waste();
@@ -459,24 +438,31 @@ fn Deck() -> impl IntoView {
 }
 
 #[component]
-fn DeckArea() -> impl IntoView {
-    let game = expect_context::<Solitaire>();
-    let deck = game.deck;
+fn Waste() -> impl IntoView {
+    let mut game = expect_context::<Solitaire>();
     let waste = game.waste;
-
+    let click = move |_| game.play(Selection::Waste);
     let waste = move || {
         waste()
             .last()
-            .map(|card| view! { <Card card /> })
+            .map(|card| card.view())
+        .collect_view()
     };
 
     view! {
+        <div class="deck" on:click=click>
+            <CardOutline />
+            {waste}
+        </div>
+    }
+}
+
+#[component]
+fn DeckArea() -> impl IntoView {
+    view! {
         <div class="deck-area">
             <Deck />
-            <div class="deck">
-                <CardOutline />
-                {waste}
-            </div>
+            <Waste />
         </div>
     }
 }
@@ -541,12 +527,4 @@ fn Solitaire() -> impl IntoView {
         })}
         </Suspense>
     }
-
-
-    // let game = Solitaire::new(&mut cards);
-
-    // view! {
-    //     <h1> "Solitaire" </h1>
-    //     <Game game />
-    // }
 }
