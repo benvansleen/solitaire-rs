@@ -43,7 +43,13 @@ ssr = [
     "thaw/ssr",
 ]
 
+[profile.dev]
+codegen-units = 8
+# lto = "off"
+
 [profile.release]
+panic = "abort"
+strip = "debuginfo"
 opt-level = 3
 lto = true
 codegen-units = 1
@@ -54,7 +60,6 @@ inherits = "release"
 opt-level = 'z'
 lto = true
 codegen-units = 1
-panic = "abort"
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
