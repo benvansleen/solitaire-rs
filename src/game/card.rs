@@ -17,7 +17,7 @@ pub fn FaceDownCard() -> impl IntoView {
 pub fn CardOutline() -> impl IntoView {
     view! {
         <span class="card-outline">
-            <img src="cards/ace_of_spades.png"/>
+            <img src="cards/ace_of_spades.png" />
         </span>
     }
 }
@@ -119,7 +119,7 @@ impl Card {
         if self.faceup {
             self.show_faceup()
         } else {
-            view! { <FaceDownCard/> }
+            view! { <FaceDownCard /> }
         }
     }
 }

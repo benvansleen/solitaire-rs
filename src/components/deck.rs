@@ -9,8 +9,8 @@ use leptos::*;
 pub fn DeckArea() -> impl IntoView {
     view! {
         <div class="deck-area">
-            <Deck/>
-            <Waste/>
+            <Deck />
+            <Waste />
         </div>
     }
 }
@@ -44,7 +44,7 @@ fn Waste() -> impl IntoView {
             on:drop=drag
             on:dragover=move |e| e.prevent_default()
         >
-            <CardOutline/>
+            <CardOutline />
             {waste}
         </div>
     }
@@ -63,12 +63,12 @@ fn Deck() -> impl IntoView {
         deck()
             .is_empty()
             .then(|| view! { <div></div> }.into_view())
-            .unwrap_or_else(|| view! { <FaceDownCard/> }.into_view())
+            .unwrap_or_else(|| view! { <FaceDownCard /> }.into_view())
     };
 
     view! {
         <div class="deck" on:click=click>
-            <CardOutline/>
+            <CardOutline />
             {deck}
         </div>
     }
@@ -82,7 +82,7 @@ pub fn Foundations() -> impl IntoView {
             .foundations
             .iter()
             .enumerate()
-            .map(|(idx, _)| view! { <Foundation idx/> })
+            .map(|(idx, _)| view! { <Foundation idx /> })
             .collect_view()
     };
 
@@ -120,7 +120,7 @@ fn Foundation(idx: usize) -> impl IntoView {
             on:drop=drag
             on:dragover=move |e| e.prevent_default()
         >
-            <CardOutline/>
+            <CardOutline />
             {foundation}
         </div>
     }

@@ -14,18 +14,18 @@ pub fn App() -> impl IntoView {
 
     view! {
         <head>
-            <Stylesheet id="leptos" href="/pkg/solitaire.css"/>
-            <Title text="Solitaire"/>
+            <Stylesheet id="leptos" href="/pkg/solitaire.css" />
+            <Title text="Solitaire" />
         </head>
 
         <Router fallback=|| {
             let mut outside_errors = Errors::default();
             outside_errors.insert_with_default_key(AppError::NotFound);
-            view! { <ErrorTemplate outside_errors/> }.into_view()
+            view! { <ErrorTemplate outside_errors /> }.into_view()
         }>
             <main>
                 <Routes>
-                    <Route path="" view=Main/>
+                    <Route path="" view=Main />
                 </Routes>
             </main>
         </Router>
@@ -34,7 +34,7 @@ pub fn App() -> impl IntoView {
 
 #[component]
 fn Main() -> impl IntoView {
-    view! { <Solitaire/> }
+    view! { <Solitaire /> }
 }
 
 #[server]
@@ -67,7 +67,7 @@ fn Solitaire() -> impl IntoView {
         <Suspense fallback=move || {
             view! { <div>"Loading..."</div> }
         }>
-            {move || game.get().map(|game| view! { <Game game/> })}
+            {move || game.get().map(|game| view! { <Game game /> })}
         </Suspense>
     }
 }

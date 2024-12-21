@@ -1,93 +1,93 @@
 img.card {
-    height: auto;
-    width: 100%;
-    opacity: 1;
+  height: auto;
+  width: 100%;
+  opacity: 1;
 }
 
 img.selected {
-    outline: 2px solid orange;
-    opacity: 0.9;
+  outline: 2px solid orange;
+  opacity: 0.9;
 }
 
 .card-outline {
-    display: inline-block;
-    height: max-content;
-    img {
-        height: auto;
-        width: 100%;
-        visibility: hidden;
-    }
-    margin: 0 0 -150% 0;
-    outline: 2px dashed yellow;
+  display: inline-block;
+  height: max-content;
+  img {
+    height: auto;
+    width: 100%;
+    visibility: hidden;
+  }
+  margin: 0 0 -150% 0;
+  outline: 2px dashed yellow;
 }
 
 div.game {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    /* background-color: #f5f5f5; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  /* background-color: #f5f5f5; */
 }
 
 div.top-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  gap: 30%;
+
+  div.foundations {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    width: 100%;
-    height: 100%;
-    gap: 30%;
+    column-gap: 1vw;
 
-    div.foundations {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        column-gap: 1vw;
-
-        div.foundation {
-        height: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
+    div.foundation {
+      height: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
+  }
 
-    div.deck-area {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        column-gap: 3vw;
-        /* height: 100%; */
-        /* gap: 3vw; */
+  div.deck-area {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    column-gap: 3vw;
+    /* height: 100%; */
+    /* gap: 3vw; */
 
-        div.deck {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            /* margin: 0 5% 0 0; */
-        }
+    div.deck {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      /* margin: 0 5% 0 0; */
     }
+  }
 }
 
 div.piles {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  gap: 5vw;
+  margin: 10vh 0 0 0;
+
+  div.pile {
     display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    gap: 5vw;
-    margin: 10vh 0 0 0;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
 
-    div.pile {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%;
-        height: 100%;
-
-        .card + .card {
-            margin: -80% 0 0 0;
-        }
+    .card + .card {
+      margin: -80% 0 0 0;
     }
+  }
 }

@@ -25,8 +25,8 @@ pub fn Game(game: Solitaire) -> impl IntoView {
     view! {
         <h1>"Solitaire"</h1>
         <div class="game" on:click=clear_selection>
-            <TopRow/>
-            <Piles/>
+            <TopRow />
+            <Piles />
         </div>
     }
 }
@@ -35,8 +35,8 @@ pub fn Game(game: Solitaire) -> impl IntoView {
 fn TopRow() -> impl IntoView {
     view! {
         <div class="top-row">
-            <Foundations/>
-            <DeckArea/>
+            <Foundations />
+            <DeckArea />
         </div>
     }
 }
@@ -50,7 +50,7 @@ fn Piles() -> impl IntoView {
             piles
                 .iter()
                 .enumerate()
-                .map(|(idx, &cards)| view! { <Pile idx cards/> })
+                .map(|(idx, &cards)| view! { <Pile idx cards /> })
                 .collect_view()
         }
     };

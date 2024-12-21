@@ -20,7 +20,7 @@ pub fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
         (1..=cards.len()).rev().zip(cards.into_iter())
     };
     let cards = move |(card_idx, card)| {
-        view! { <PileCard pile_idx=idx card_idx card=card/> }
+        view! { <PileCard pile_idx=idx card_idx card=card /> }
     };
 
     let click = move || {
@@ -35,7 +35,7 @@ pub fn Pile(idx: usize, cards: RwSignal<Vec<Card>>) -> impl IntoView {
             on:drop=move |_| drag()
             on:dragover=move |e| e.prevent_default()
         >
-            <CardOutline/>
+            <CardOutline />
             <For
                 each=pile
                 key=move |(i, card)| format!("{}-{}", i, card.id())

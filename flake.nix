@@ -49,7 +49,7 @@
       {
         packages.default = pkg.site-server;
 
-        checks = pkg.checks;
+        inherit (pkg) checks;
         formatter = treefmtEval.config.build.wrapper;
 
         devShells.default = craneLib.devShell {
